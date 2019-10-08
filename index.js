@@ -9,8 +9,17 @@ app.get('/', function(req, res){
 
 io.on('connection', function(socket){
   socket.on('chat message', function(msg){
-    io.emit('chat message', msg);
+    console.log(msg);
+    io.emit('chat message', '<b>' + msg.player + '</b> says: ' + msg.msg);
   });
+
+  socket.on('choice', function(choice){
+    console.log(choice);
+    io.emit('choice', choice);
+    io.emit('chat message', '<span class="system">' + choice.player + ' has chosen!</span>')
+  });
+
+  //socket.emit('round start', 0);
 });
 
 http.listen(port, function(){

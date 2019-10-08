@@ -12,6 +12,7 @@
       #messages li { padding: 5px 10px; }
       #messages li:nth-child(odd) { background: #eee; }
       #messages { margin-bottom: 40px }
+      .system { color: blue; }
     </style>
   </head>
   <body>
@@ -21,19 +22,59 @@
     </form>
     <script src="https://cdn.socket.io/socket.io-1.2.0.js"></script>
     <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@8"></script>
+    <script src="https://cdn.rawgit.com/nnattawat/flip/master/dist/jquery.flip.min.js"></script>
     <script>
+      let socket = io();
+      let name;
       $(function () {
-        var socket = io();
+        Swal.fire({
+          title: 'Enter your name',
+          input: 'text',
+          inputValidator: (value) => {
+            if (!value) {
+              return 'You need to write something!'
+            }
+          }
+        }).then(
+                function(value) {
+                  name = value.value;
+                }
+        );
+
         $('form').submit(function(){
-          socket.emit('chat message', $('#m').val());
+          socket.emit('chat message', {'player': name, 'msg': $('#m').val()});
           $('#m').val('');
           return false;
         });
         socket.on('chat message', function(msg){
-          $('#messages').append($('<li>').text(msg));
+          $('#messages').append($('<li>').html(msg));
           window.scrollTo(0, document.body.scrollHeight);
         });
+        socket.on('round start', function(round) {
+          $('#messages').append($('<hr>'));
+          $('#messages').append($('<li>').html('<span class="system">Round Start: ' + round + "</span>"));
+          pick();
+        });
       });
+
+      function pick() {
+        Swal.fire({
+          title: 'Pick your move!',
+          input: 'select',
+          inputOptions: {
+            shield: 'Shield',
+            reload: 'Reload',
+            shoot: 'Shoot'
+          },
+          inputPlaceholder: 'Select an action!'
+        }).then(
+                function(value) {
+                  socket.emit('choice', {'player': name, 'choice': value});
+                  console.log(value);
+                }
+        );
+      }
     </script>
   </body>
 </html>

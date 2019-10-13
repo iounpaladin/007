@@ -1,80 +1,167 @@
 <!doctype html>
 <html>
-  <head>
-    <title>Socket.IO chat</title>
+<head>
+    <title>007</title>
+    <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
     <style>
-      * { margin: 0; padding: 0; box-sizing: border-box; }
-      body { font: 13px Helvetica, Arial; }
-      form { background: #000; padding: 3px; position: fixed; bottom: 0; width: 100%; }
-      form input { border: 0; padding: 10px; width: 90%; margin-right: .5%; }
-      form button { width: 9%; background: rgb(130, 224, 255); border: none; padding: 10px; }
-      #messages { list-style-type: none; margin: 0; padding: 0; }
-      #messages li { padding: 5px 10px; }
-      #messages li:nth-child(odd) { background: #eee; }
-      #messages { margin-bottom: 40px }
-      .system { color: blue; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font: 13px Helvetica, Arial;
+        }
+
+        form {
+            background: #000;
+            padding: 3px;
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+        }
+
+        form input {
+            border: 0;
+            padding: 10px;
+            width: 90%;
+            margin-right: .5%;
+        }
+
+        form button {
+            width: 9%;
+            background: rgb(130, 224, 255);
+            border: none;
+            padding: 10px;
+        }
+
+        #messages {
+            list-style-type: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        #messages li {
+            padding: 5px 10px;
+        }
+
+        #messages li:nth-child(odd) {
+            background: #eee;
+        }
+
+        #messages {
+            margin-bottom: 40px
+        }
+
+        .system {
+            color: blue;
+        }
+
+        .dead {
+            color: red;
+            text-decoration: line-through;
+        }
+
+        .death {
+            color: red;
+            font-size: 200%;
+        }
     </style>
-  </head>
-  <body>
-    <ul id="messages"></ul>
-    <form action="">
-      <input id="m" autocomplete="off" /><button>Send</button>
-    </form>
-    <script src="https://cdn.socket.io/socket.io-1.2.0.js"></script>
-    <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@8"></script>
-    <script src="https://cdn.rawgit.com/nnattawat/flip/master/dist/jquery.flip.min.js"></script>
-    <script>
-      let socket = io();
-      let name;
-      $(function () {
+</head>
+<body>
+<div class="w3-row">
+    <div id="chat" class="w3-twothird w3-container">
+        <ul id="messages"></ul>
+        <form action="">
+            <input id="m" autocomplete="off"/>
+            <button>Send</button>
+        </form>
+    </div>
+    <div class="w3-third w3-container">
+        <ol id="players">
+        </ol>
+    </div>
+</div>
+<script src="https://cdn.socket.io/socket.io-1.2.0.js"></script>
+<script src="https://code.jquery.com/jquery-1.11.1.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@8"></script>
+<script src="https://cdn.rawgit.com/nnattawat/flip/master/dist/jquery.flip.min.js"></script>
+<script src="//code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+<link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/smoothness/jquery-ui.css">
+<script>
+    let socket = io();
+    let name;
+    let dead = false;
+    $(function () {
         Swal.fire({
-          title: 'Enter your name',
-          input: 'text',
-          inputValidator: (value) => {
-            if (!value) {
-              return 'You need to write something!'
+            title: 'Enter your name',
+            input: 'text',
+            inputValidator: (value) => {
+                if (!value) {
+                    return 'You need to write something!'
+                }
             }
-          }
         }).then(
-                function(value) {
-                  name = value.value;
-                }
+            function (value) {
+                name = value.value;
+                socket.emit("player join", name);
+            }
         );
 
-        $('form').submit(function(){
-          socket.emit('chat message', {'player': name, 'msg': $('#m').val()});
-          $('#m').val('');
-          return false;
+        $('form').submit(function () {
+            socket.emit('chat message', {'player': name, 'msg': $('#m').val()});
+            $('#m').val('');
+            return false;
         });
-        socket.on('chat message', function(msg){
-          $('#messages').append($('<li>').html(msg));
-          window.scrollTo(0, document.body.scrollHeight);
-        });
-        socket.on('round start', function(round) {
-          $('#messages').append($('<hr>'));
-          $('#messages').append($('<li>').html('<span class="system">Round Start: ' + round + "</span>"));
-          pick();
-        });
-      });
 
-      function pick() {
+        socket.on('chat message', function (msg) {
+            $('#messages').append($('<li>').html(msg));
+            window.scrollTo(0, document.body.scrollHeight);
+        });
+
+        socket.on('round start', function (rd) {
+            $('#messages').append($('<hr>'));
+            $('#messages').append($('<li>').html('<span class="system">Round Start: ' + rd.round + "</span>"));
+            console.log(rd);
+            if (rd.dead.filter(e => e === name).length > 0) {
+                $('body').effect("highlight", {"color": "#ff0000"}, 500);
+                $('#messages').append($('<li>').addClass("death").html("You have died!"));
+                dead = true;
+            }
+            if (!dead) pick();
+        });
+
+        socket.on("player join", function (player) {
+            $("#players").append($("<li>").text(player).attr("id", player));
+        });
+
+        socket.on("player leave", function (player) {
+            $("#" + player).remove();
+        });
+
+        socket.on("player dies", function (player) {
+            $("#" + player).addClass("dead");
+        })
+    });
+
+    function pick() {
         Swal.fire({
-          title: 'Pick your move!',
-          input: 'select',
-          inputOptions: {
-            shield: 'Shield',
-            reload: 'Reload',
-            shoot: 'Shoot'
-          },
-          inputPlaceholder: 'Select an action!'
+            title: 'Pick your move!',
+            input: 'select',
+            inputOptions: {
+                shield: 'Shield',
+                reload: 'Reload',
+                shoot: 'Shoot'
+            },
+            inputPlaceholder: 'Select an action!'
         }).then(
-                function(value) {
-                  socket.emit('choice', {'player': name, 'choice': value});
-                  console.log(value);
-                }
+            function (value) {
+                socket.emit('choice', {'player': name, 'choice': value});
+                console.log(value);
+            }
         );
-      }
-    </script>
-  </body>
+    }
+</script>
+</body>
 </html>

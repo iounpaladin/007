@@ -3,7 +3,7 @@
   "version": "0.0.7",
   "description": "Implements the classic 007 game.",
   "dependencies": {
-    "express": "^4.15.2",
+    "express": "^4.17.3",
     "socket.io": "^1.7.3"
   },
   "scripts": {
